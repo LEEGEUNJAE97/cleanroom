@@ -13,16 +13,16 @@
 
   // KPI (desc의 <br />만 허용)
   put("stats", (D.stats || []).map(function (s) {
-    return '<div class="kpi rv"><b><span data-count="' + (+s.count) + '">0</span><small>' + h(s.unit) + "</small></b><p>" +
+    return '<div class="kpi"><b><span data-count="' + (+s.count) + '">0</span><small>' + h(s.unit) + "</small></b><p>" +
       h(s.desc).replace(/&lt;br \/&gt;/g, "<br />") + "</p></div>";
   }).join(""));
 
   put("ways", (D.workStyle || []).map(function (w, i) {
-    return '<div class="way rv"><div class="badge">' + pad(i) + "</div><h3>" + h(k(w.tag)) + "</h3><p>" + h(k(w.desc)) + "</p></div>";
+    return '<div class="way"><div class="badge">' + pad(i) + "</div><h3>" + h(k(w.tag)) + "</h3><p>" + h(k(w.desc)) + "</p></div>";
   }).join(""));
 
   put("exps", (D.projects || []).map(function (p, i) {
-    return '<details class="exp rv"' + (i === 0 ? " open" : "") + "><summary>" +
+    return '<details class="exp"' + (i === 0 ? " open" : "") + "><summary>" +
       '<span class="num">' + pad(i) + "</span>" +
       "<div><h3>" + h(k(p.title)) + '</h3><div class="meta"><span class="chip">' + h(k(p.type)) + "</span><span>" + h(k(p.company)) + " · " + h(p.period) + "</span></div></div>" +
       '<span class="plus" aria-hidden="true"></span></summary>' +
@@ -35,7 +35,7 @@
         (g.duties || []).map(function (d) { return "<li>" + h(k(d)) + "</li>"; }).join("") + "</ul>" +
         (g.results || []).map(function (r) { return '<div class="res">' + h(k(r)) + "</div>"; }).join("") + "</div>";
     }).join("");
-    return '<article class="job rv"><div class="job-h"><h3>' + h(k(e.company)) + "</h3><span>" + h(k(e.title)) + "</span><time>" + h(e.period) + "</time></div>" +
+    return '<article class="job"><div class="job-h"><h3>' + h(k(e.company)) + "</h3><span>" + h(k(e.title)) + "</span><time>" + h(e.period) + "</time></div>" +
       '<div class="job-note">' + h(k(e.note)) + '</div><div class="groups">' + groups + "</div></article>";
   }).join(""));
 
@@ -53,7 +53,7 @@
   put("why-lead", h(m.lead));
   put("why-body", (m.body || []).map(function (t) { return "<p>" + h(t) + "</p>"; }).join(""));
   put("nexts", (D.next || []).map(function (n, i) {
-    return '<div class="next rv"><div class="badge">' + pad(i) + "</div><h3>" + h(n.title) + "</h3><p>" + h(n.desc) + "</p></div>";
+    return '<div class="next"><div class="badge">' + pad(i) + "</div><h3>" + h(n.title) + "</h3><p>" + h(n.desc) + "</p></div>";
   }).join(""));
 
   // 리빌 + KPI 카운트업
@@ -68,16 +68,18 @@
       if (p < 1) requestAnimationFrame(tick);
     })(t0);
   }
-  if (!("IntersectionObserver" in window)) {
+  if (reduce || !("IntersectionObserver" in window)) { // 동작 줄이기: 전부 바로 표시
     document.querySelectorAll(".rv").forEach(function (el) { el.classList.add("in"); });
     countUp(); return;
   }
+  // 1회 리빌: 포인트 요소(.rv)와 성과 숫자만. 보이면 한 번 등장하고 끝.
   var io = new IntersectionObserver(function (es) {
-    es.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add("in"); io.unobserve(en.target); } });
-  }, { threshold: 0.12 });
-  document.querySelectorAll(".rv").forEach(function (el, i) { el.style.transitionDelay = ((i % 3) * 0.06) + "s"; io.observe(el); });
-  var started = false, st = document.getElementById("stats");
-  new IntersectionObserver(function (es) {
-    if (!started && es[0].isIntersecting) { started = true; countUp(); }
-  }, { threshold: 0.3 }).observe(st);
+    es.forEach(function (en) {
+      if (!en.isIntersecting) return;
+      en.target.classList.add("in"); io.unobserve(en.target);
+      if (en.target.id === "stats") countUp();
+    });
+  }, { threshold: 0.3 });
+  document.querySelectorAll(".rv").forEach(function (el) { io.observe(el); });
+  io.observe(document.getElementById("stats"));
 })();

@@ -115,7 +115,7 @@
     .ways { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; }
     .way { grid-column: span 2; background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 24px; transition: transform .4s var(--ease), border-color .3s, box-shadow .4s, opacity .9s var(--ease); }
     .way:nth-child(4), .way:nth-child(5) { grid-column: span 3; }
-    .way:hover { transform: translateY(-4px); border-color: rgba(11,122,72,.35); box-shadow: 0 18px 40px -24px rgba(13,20,17,.35); }
+    .way:hover { border-color: rgba(11,122,72,.35); box-shadow: 0 18px 40px -24px rgba(13,20,17,.35); }
     .badge { font-family: var(--mono); font-size: 13px; font-weight: 700; color: #fff; background: var(--dark); border-radius: 10px; width: 40px; height: 34px; display: grid; place-items: center; }
     .way h3 { margin: 18px 0 8px; font-size: 19px; font-weight: 800; letter-spacing: -.02em; line-height: 1.35; }
     .way p { margin: 0; color: var(--sub); font-size: 14.5px; line-height: 1.7; }
@@ -223,8 +223,48 @@
       font-family: var(--mono); font-size: 11.5px; letter-spacing: .14em; color: var(--dsub); }
 
     /* 스크롤 리빌 — JS가 .js를 붙였을 때만 숨김 (실패해도 콘텐츠는 보임) */
-    .js .rv { opacity: 0; transform: translateY(28px); transition: opacity .9s var(--ease), transform .9s var(--ease); }
+    /* 모션은 포인트에만 — ① 첫 화면 등장(로드 1회) ② 성과 숫자 카운트업 ③ 지원동기 핵심 문장 ④ 하단 연락 문구.
+       나머지 본문은 움직이지 않음(전부 움직이면 어지럽고 강조가 사라짐). 모두 1회만. */
+    /* 오프닝: 종이비행기가 화면 중앙에 민트 선을 긋고 → 그 선을 따라 화면이 위아래로 열림 (세션 첫 방문만, ~1.5s)
+       --intro: 오프닝이 재생될 때 히어로 등장을 그만큼 늦춤 */
+    :root { --intro: 0s; }
+    html[data-intro="play"] { --intro: .95s; }
+    #cine-top, #cine-bottom, #intro { display: none; }
+    html[data-intro="play"] #cine-top, html[data-intro="play"] #cine-bottom, html[data-intro="play"] #intro { display: block; }
+    #cine-top, #cine-bottom { position: fixed; left: 0; right: 0; height: 50.5vh; background: var(--dark2); z-index: 300; pointer-events: none; }
+    #cine-top { top: 0; animation: splitUp .8s .9s cubic-bezier(.22,1,.36,1) forwards; }
+    #cine-bottom { bottom: 0; animation: splitDown .8s .9s cubic-bezier(.22,1,.36,1) forwards; }
+    @keyframes splitUp { 55% { opacity: 1; } to { transform: translateY(-86%); opacity: 0; visibility: hidden; } }
+    @keyframes splitDown { 55% { opacity: 1; } to { transform: translateY(86%); opacity: 0; visibility: hidden; } }
+    #intro { position: fixed; inset: 0; z-index: 310; pointer-events: none; animation: introOut .5s .85s var(--ease) forwards; }
+    @keyframes introOut { to { opacity: 0; visibility: hidden; } }
+    /* 비행기를 선의 오른쪽 끝에 붙여 함께 이동 → 어긋나지 않음 */
+    #intro .flight { position: absolute; top: 50%; left: 0; width: 0; height: 2px; transform: translateY(-50%); border-radius: 2px;
+      background: linear-gradient(90deg, rgba(61,220,151,0), var(--mint) 40%, #A6F4CF); box-shadow: 0 0 12px rgba(61,220,151,.6);
+      animation: fly .65s .1s linear forwards; }
+    @keyframes fly { to { width: 100vw; } }
+    #intro .plane { position: absolute; left: 100%; top: 50%; width: 34px; height: 34px; transform: translate(-100%, -50%); filter: drop-shadow(0 0 8px rgba(61,220,151,.55)); }
+    #intro .plane svg { display: block; width: 100%; height: 100%; }
+
+    .hero-copy > *, .hero-photo { animation: rise .9s var(--ease) both; animation-delay: var(--intro); }
+    .hero-copy > :nth-child(2) { animation-delay: calc(var(--intro) + .1s); }
+    .hero-copy > :nth-child(3) { animation-delay: calc(var(--intro) + .22s); }
+    .hero-copy > :nth-child(n+4) { animation-delay: calc(var(--intro) + .34s); }
+    .hero-photo { animation-name: fade; animation-duration: 1.4s; animation-delay: calc(var(--intro) + .2s); }
+    @keyframes rise { from { opacity: 0; transform: translateY(18px); } }
+    @keyframes fade { from { opacity: 0; } }
+    .js .rv { opacity: 0; transform: translateY(14px); transition: opacity 1s ease-out, transform 1s var(--ease); }
     .js .rv.in { opacity: 1; transform: none; }
+    /* 카드 호버 — 움직이지 않고 테두리·그림자만 */
+    .kpi, .job, .panel { transition: border-color .3s, box-shadow .4s; }
+    .kpi:hover, .job:hover, .panel:hover { border-color: rgba(11,122,72,.35); box-shadow: 0 18px 40px -24px rgba(13,20,17,.35); }
+    .next:hover { border-color: rgba(61,220,151,.45); }
+    /* 스크롤 진행 바 — 지원 브라우저만(CSS scroll-timeline), 미지원이면 안 보임 */
+    @supports (animation-timeline: scroll()) {
+      .nav::after { content: ""; position: absolute; left: 0; bottom: 0; height: 2px; width: 100%; background: var(--mint);
+        transform-origin: 0 50%; transform: scaleX(0); animation: progress linear both; animation-timeline: scroll(root); }
+      @keyframes progress { to { transform: scaleX(1); } }
+    }
 
     @media (max-width: 960px) {
       .hero-grid, .why-grid, .info { grid-template-columns: 1fr; }
@@ -257,13 +297,28 @@
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation: none !important; transition: none !important; }
-      .js .rv { opacity: 1; transform: none; }
+      .js .rv { opacity: 1; transform: none; filter: none; }
       html { scroll-behavior: auto; }
     }
   </style>
 </head>
 <body>
-<script>document.documentElement.classList.add("js");</script>
+<script>
+  document.documentElement.classList.add("js");
+  // 오프닝은 세션 첫 방문 + 동작 줄이기 꺼진 경우만
+  try {
+    if (!sessionStorage.getItem("introSeen") && !matchMedia("(prefers-reduced-motion: reduce)").matches)
+      document.documentElement.setAttribute("data-intro", "play");
+    sessionStorage.setItem("introSeen", "1");
+  } catch (e) {} // 저장소 막힌 환경이면 오프닝 없이 바로 표시
+</script>
+<div id="cine-top"></div>
+<div id="cine-bottom"></div>
+<div id="intro" aria-hidden="true">
+  <div class="flight"><span class="plane">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 21 L23 12 L2 3 L2 10 L17 12 L2 14 Z" fill="#E9FFF5" /></svg>
+  </span></div>
+</div>
 
 <nav class="nav">
   <div class="wrap">
@@ -305,28 +360,28 @@
     <div class="kpis" id="stats"></div>
 
     <section class="blk" id="about">
-      <div class="sec-h rv"><span class="no">01 — HOW I WORK</span><h2>일하는 방식</h2><p>데이터 대조부터 절차 통일까지, 실험 현장에서 일하는 다섯 가지 원칙</p></div>
+      <div class="sec-h"><span class="no">01 — HOW I WORK</span><h2>일하는 방식</h2><p>데이터 대조부터 절차 통일까지, 실험 현장에서 일하는 다섯 가지 원칙</p></div>
       <div class="ways" id="ways"></div>
     </section>
 
     <section class="blk" id="exp">
-      <div class="sec-h rv"><span class="no">02 — EXPERIENCE</span><h2>경험</h2><p>데이터 검증부터 현장 안전점검까지 5개 경험</p></div>
+      <div class="sec-h"><span class="no">02 — EXPERIENCE</span><h2>경험</h2><p>데이터 검증부터 현장 안전점검까지 5개 경험</p></div>
       <div class="exps" id="exps"></div>
     </section>
 
     <section class="blk" id="career">
-      <div class="sec-h rv"><span class="no">03 — CAREER</span><h2>경력사항</h2></div>
+      <div class="sec-h"><span class="no">03 — CAREER</span><h2>경력사항</h2></div>
       <div class="tl" id="jobs"></div>
     </section>
 
     <section class="blk" id="info">
-      <div class="sec-h rv"><span class="no">04 — CREDENTIALS</span><h2>자격 · 학력 · 활동</h2></div>
+      <div class="sec-h"><span class="no">04 — CREDENTIALS</span><h2>자격 · 학력 · 활동</h2></div>
       <div class="info">
-        <div class="panel rv"><div class="panel-h">CERTIFICATIONS</div><div id="certs"></div></div>
+        <div class="panel"><div class="panel-h">CERTIFICATIONS</div><div id="certs"></div></div>
         <div>
-          <div class="panel rv"><div class="panel-h">EDUCATION</div><div id="edu"></div></div>
-          <div class="panel rv"><div class="panel-h">TRAINING · ACTIVITIES</div><div id="acts"></div></div>
-          <div class="panel rv"><div class="panel-h">PART-TIME</div><div id="pt"></div></div>
+          <div class="panel"><div class="panel-h">EDUCATION</div><div id="edu"></div></div>
+          <div class="panel"><div class="panel-h">TRAINING · ACTIVITIES</div><div id="acts"></div></div>
+          <div class="panel"><div class="panel-h">PART-TIME</div><div id="pt"></div></div>
         </div>
       </div>
     </section>
@@ -335,12 +390,12 @@
   <section class="why" id="why">
     <div class="glow"></div>
     <div class="wrap">
-      <div class="sec-h rv"><span class="no">05 — WHY KTC</span><h2>지원동기</h2></div>
-      <div class="why-grid rv">
-        <p class="why-lead" id="why-lead"></p>
+      <div class="sec-h"><span class="no">05 — WHY KTC</span><h2>지원동기</h2></div>
+      <div class="why-grid">
+        <p class="why-lead rv" id="why-lead"></p>
         <div class="why-body" id="why-body"></div>
       </div>
-      <div class="nexts-h rv">입사 후 할 일</div>
+      <div class="nexts-h">입사 후 할 일</div>
       <div class="nexts" id="nexts"></div>
     </div>
   </section>
@@ -359,7 +414,7 @@
           <li><b>0건</b><span>연구실 안전점검</span><small>과태료 지적사항</small></li>
         </ol>
       </div>
-      <div class="log rv" aria-label="연락처">
+      <div class="log" aria-label="연락처">
         <div class="log-h"><span><i></i>LOG SHEET</span><span>RUN · 2026.11</span></div>
         <dl>
           <dt>지원</dt><dd>인테그리스코리아 KTC · Cleanroom Technician</dd>
